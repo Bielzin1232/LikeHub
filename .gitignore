@@ -1,0 +1,47 @@
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
+
+# Java
+*.class
+*.log
+
+# Spring Boot local configuration and secrets
+application-local.properties
+application-local.yml
+application-*.local.properties
+application-*.local.yml
+.env
+.env.*
+!.env.example
+
+# IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache/
+.vscode/
+
+# Build directories from IDEs and other tools
+build/
+out/
+bin/
+.gradle/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Operating system files
+.DS_Store
+Thumbs.db
