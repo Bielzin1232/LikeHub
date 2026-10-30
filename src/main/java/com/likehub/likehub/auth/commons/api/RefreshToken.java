@@ -22,8 +22,11 @@ public class RefreshToken {
     @Column(nullable = false, unique = true)
     private String tokenHash;  // SHA-256 do token bruto
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "user_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_refresh_tokens_user"))
     private User user;
 
     @Column(nullable = false)

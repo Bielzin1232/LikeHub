@@ -12,6 +12,7 @@ application-local.properties
 application-local.yml
 application-*.local.properties
 application-*.local.yml
+aplication.properties
 .env
 .env.*
 !.env.example

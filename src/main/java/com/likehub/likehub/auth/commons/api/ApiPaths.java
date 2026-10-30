@@ -47,7 +47,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Follow {
         private Follow() {}
-
         public static final String BASE      = ApiPaths.Users.BY_USERNAME;
         public static final String FOLLOW    = BASE + "/follow";
         public static final String FOLLOWERS = BASE + "/followers";
@@ -59,7 +58,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Posts {
         private Posts() {}
-
         public static final String BASE  = API_V1 + "/posts";
         public static final String BY_ID = BASE + "/{postId}";
         public static final String SAVE  = BY_ID + "/save";
@@ -78,20 +76,10 @@ public final class ApiPaths {
     }
 
     // ==========================================================
-    // MÍDIA
-    // ==========================================================
-    public static final class Media {
-        private Media() {}
-
-        public static final String BASE = API_V1 + "/media";
-    }
-
-    // ==========================================================
     // LIKES
     // ==========================================================
     public static final class Likes {
         private Likes() {}
-
         public static final String BASE   = API_V1 + "/likes";
         public static final String TOGGLE = BASE + "/toggle";
         public static final String COUNT  = BASE + "/count/{targetId}";
@@ -103,7 +91,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Feed {
         private Feed() {}
-
         public static final String BASE = API_V1 + "/feed";
     }
 
@@ -112,7 +99,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Explore {
         private Explore() {}
-
         public static final String BASE = API_V1 + "/explore";
     }
 
@@ -121,10 +107,18 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Notifications {
         private Notifications() {}
-
         public static final String BASE         = API_V1 + "/notifications";
         public static final String UNREAD_COUNT = BASE + "/unread-count";
         public static final String READ_ALL     = BASE + "/read-all";
         public static final String READ         = BASE + "/{notificationId}/read";
     }
+    // ==========================================================
+    // IMAGENS
+    // ==========================================================
+    public static final class Images {
+        private Images() {}
+        public static final String BASE = API_V1 + "/images";
+        public static final String upload = BASE + "/upload";
+    }
+
 }

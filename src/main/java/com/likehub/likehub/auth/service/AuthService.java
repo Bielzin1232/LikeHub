@@ -6,15 +6,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.likehub.likehub.auth.dto.*;
 import com.likehub.likehub.shared.security.JwtUtil;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.likehub.likehub.auth.dto.LoginRequest;
-import com.likehub.likehub.auth.dto.LoginResponse;
-import com.likehub.likehub.auth.dto.RegisterRequest;
-import com.likehub.likehub.auth.dto.RegisterResponse;
 import com.likehub.likehub.shared.exceptions.ConflitoException;
 import com.likehub.likehub.shared.exceptions.NaoAutenticadoException;
 import com.likehub.likehub.shared.exceptions.RequisicaoInvalidaException;
@@ -109,7 +106,32 @@ public class AuthService {
                 "Bearer", jwtUtil.getExpirationMillis() / 1000);
     }
 
+    public ChangePasswordResponse changePassword(User usuarioLogado, ChangePassword changePassword) {
+        if (excedeLimiteDoBcrypt(changePassword.newPassword())) {
+            throw new RequisicaoInvalidaException("SENHA_LONGA_DEMAIS",
+                    "A senha excede o limite de 72 bytes (acentos e emojis ocupam mais de um byte).");
+        }
+        if (!passwordEncoder.matches(changePassword.oldPassword(), usuarioLogado.getPassword())) {
+            throw new NaoAutenticadoException("SENHA_ATUAL_INVALIDA", "A senha atual informada está incorreta.");
+        }
+        if (passwordEncoder.matches(changePassword.newPassword(), usuarioLogado.getPassword())) {
+            throw new RequisicaoInvalidaException("SENHA_NOVA_IGUAL_A_ANTIGA", "A nova senha não pode ser igual à senha antiga.");
+        }
+        usuarioLogado.atualizarSenhaHash(passwordEncoder.encode(changePassword.newPassword()));
+        usuarioLogado.invalidarSessoes();
+        userRepository.save(usuarioLogado);
+        refreshTokenService.revokeAllForUser(usuarioLogado.getPublicId());
 
+        String refreshToken = refreshTokenService.createRefreshToken(usuarioLogado, null);
+        String token = jwtUtil.generateAccessToken(usuarioLogado);
+        return new ChangePasswordResponse("sucess","Senha alterada com sucesso", token, refreshToken);
+    }
+
+    public void logoutAll(User usuarioLogado) {
+        usuarioLogado.invalidarSessoes();
+        userRepository.save(usuarioLogado);
+        refreshTokenService.revokeAllForUser(usuarioLogado.getPublicId());
+    }
 
 
     private NaoAutenticadoException credenciaisInvalidas() {
