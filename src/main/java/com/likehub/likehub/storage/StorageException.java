@@ -1,8 +1,10 @@
 package com.likehub.likehub.storage;
 
-import java.io.IOException;
+import com.likehub.likehub.shared.exceptions.ErroInternoException;
 
-public class StorageException extends Throwable {
-    public StorageException(String falhaAoSalvarArquivo, IOException e) {
+public class StorageException extends ErroInternoException {
+
+    public StorageException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

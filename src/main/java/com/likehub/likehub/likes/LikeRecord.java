@@ -3,14 +3,7 @@ package com.likehub.likehub.likes;
 import java.time.Instant;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,7 +13,8 @@ import lombok.Setter;
 @Setter
 @Table(name = "like_record",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_like_user_post", columnNames = {"user_id", "post_id"}),
+                name = "uk_like_user_target",
+                columnNames = {"user_id", "post_id", "target_type"}),
         indexes = @Index(name = "idx_like_post", columnList = "post_id"))
 public class LikeRecord {
 
@@ -35,5 +29,14 @@ public class LikeRecord {
     private UUID postId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false,updatable = false)
+    private TargetType targetType;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+    }
 }

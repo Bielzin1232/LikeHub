@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -25,13 +28,36 @@ public class Post {
     @Column(nullable = false)
     private String content;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @Column(nullable = false,updatable = false)
+    private Instant createdAt;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostComment> comments = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "post_hashtags", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "tag")
+    private List<String> hashtags = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC")
+    private List<PostImage> images = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "sender_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_posts_sender"))
     private User sender;
 
-    @ManyToOne
-    @JoinColumn(name = "like_id", nullable = false)
-    private LikeRecord like;
-
+    public void addImage(PostImage img) {
+        img.setPost(this);
+        this.images.add(img);
+    }
+    @PrePersist
+    private void prePersist() {
+        this.createdAt = Instant.now();
+    }
 
 }

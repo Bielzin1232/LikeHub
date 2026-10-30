@@ -27,13 +27,22 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET é obrigatório.");
+        }
         byte[] bytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < 32) {
+            throw new IllegalStateException("JWT_SECRET deve possuir pelo menos 32 bytes.");
+        }
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    public String generateToken(String username, List<String> roles) {
+    public String generateToken(User user) {
+        String username = user.getPublicId().toString();
+        List<String> roles = user.getRoleNames();
         Claims claims = Jwts.claims().setSubject(username);
         claims.put("roles", roles);
+        claims.put("sessionVersion", user.getSessionVersion());
         Date now = new Date();
         Date exp = new Date(now.getTime() + jwtExpirationMillis);
         return Jwts.builder()
@@ -45,7 +54,7 @@ public class JwtUtil {
     }
 
     public String generateAccessToken(User user) {
-        return generateToken(user.getPublicId().toString(), user.getRoleNames());
+        return generateToken(user);
     }
 
     public long getExpirationMillis() {
@@ -69,5 +78,14 @@ public class JwtUtil {
     public List<String> extractRoles(String token) {
         Object roles = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().get("roles");
         return roles == null ? List.of() : (List<String>) roles;
+    }
+
+    public long extractSessionVersion(String token) {
+        Object version = Jwts.parserBuilder().setSigningKey(key).build()
+                .parseClaimsJws(token).getBody().get("sessionVersion");
+        if (version instanceof Number number) {
+            return number.longValue();
+        }
+        throw new IllegalArgumentException("Token sem versão de sessão.");
     }
 }

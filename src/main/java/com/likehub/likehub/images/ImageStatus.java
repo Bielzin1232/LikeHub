@@ -1,4 +1,6 @@
 package com.likehub.likehub.images;
 
-public class ImageStatus {
+public enum ImageStatus {
+    PENDING,
+    ATTACHED
 }
