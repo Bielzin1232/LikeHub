@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record PostResponse(
-        UUID id,
+        Long id,
         String title,
         String content,
         Instant createdAt,

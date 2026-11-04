@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.likehub.likehub.auth.dto.*;
 import com.likehub.likehub.shared.security.JwtUtil;
+import com.likehub.likehub.users.PerfilType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -47,8 +48,9 @@ public class AuthService {
     public RegisterResponse register(RegisterRequest request) {
         String email = request.email().toLowerCase(Locale.ROOT);
         String username = request.username().toLowerCase(Locale.ROOT);
+        String displayName = request.displayName().trim();
 
-        if (excedeLimiteDoBcrypt(request.password())) {
+        if (exceedsBcryptLimit(request.password())) {
             throw new RequisicaoInvalidaException("SENHA_LONGA_DEMAIS",
                     "A senha excede o limite de 72 bytes (acentos e emojis ocupam mais de um byte).");
         }
@@ -62,13 +64,19 @@ public class AuthService {
         if (userRepository.existsByUsername(username)) {
             throw new ConflitoException("USERNAME_EM_USO", "O nome de usuário informado já está em uso.");
         }
+        if (displayName.isBlank()) {
+            throw new RequisicaoInvalidaException("DISPLAY_NAME_INVALIDO", "O nome de exibição não pode estar em branco.");
+        }
+        if(userRepository.existsByDisplayName(displayName)) {
+            throw new ConflitoException("DISPLAY_NAME_EM_USO", "O nome de exibição informado já está em uso.");
+        }
 
-        User user = User.criar(email, username, passwordEncoder.encode(request.password()));
+        User user = User.create(email, username, passwordEncoder.encode(request.password()), displayName);
 
         try {
             userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException ex) {
-            throw traduzir(ex);
+            throw translate(ex);
         }
 
         String token = jwtUtil.generateAccessToken(user);
@@ -79,8 +87,8 @@ public class AuthService {
 
 
     public LoginResponse login(LoginRequest request) {
-        if (excedeLimiteDoBcrypt(request.password())) {
-            throw credenciaisInvalidas();
+        if (exceedsBcryptLimit(request.password())) {
+            throw invalidCredentials();
         }
 
         String identificador = request.identifier().strip().toLowerCase(Locale.ROOT);
@@ -92,12 +100,12 @@ public class AuthService {
         boolean senhaConfere = passwordEncoder.matches(request.password(), hash);
 
         if (encontrado.isEmpty() || !senhaConfere || !encontrado.get().isEnabled()) {
-            throw credenciaisInvalidas();
+            throw invalidCredentials();
         }
         User user = encontrado.get();
 
         if (passwordEncoder.upgradeEncoding(user.getPassword())) {
-            user.atualizarSenhaHash(passwordEncoder.encode(request.password()));
+            user.updatePasswordHash(passwordEncoder.encode(request.password()));
             userRepository.save(user);
         }
         String refreshToken = refreshTokenService.createRefreshToken(user, null);
@@ -107,7 +115,7 @@ public class AuthService {
     }
 
     public ChangePasswordResponse changePassword(User usuarioLogado, ChangePassword changePassword) {
-        if (excedeLimiteDoBcrypt(changePassword.newPassword())) {
+        if (exceedsBcryptLimit(changePassword.newPassword())) {
             throw new RequisicaoInvalidaException("SENHA_LONGA_DEMAIS",
                     "A senha excede o limite de 72 bytes (acentos e emojis ocupam mais de um byte).");
         }
@@ -117,8 +125,8 @@ public class AuthService {
         if (passwordEncoder.matches(changePassword.newPassword(), usuarioLogado.getPassword())) {
             throw new RequisicaoInvalidaException("SENHA_NOVA_IGUAL_A_ANTIGA", "A nova senha não pode ser igual à senha antiga.");
         }
-        usuarioLogado.atualizarSenhaHash(passwordEncoder.encode(changePassword.newPassword()));
-        usuarioLogado.invalidarSessoes();
+        usuarioLogado.updatePasswordHash(passwordEncoder.encode(changePassword.newPassword()));
+        usuarioLogado.invalidateSessions();
         userRepository.save(usuarioLogado);
         refreshTokenService.revokeAllForUser(usuarioLogado.getPublicId());
 
@@ -128,21 +136,21 @@ public class AuthService {
     }
 
     public void logoutAll(User usuarioLogado) {
-        usuarioLogado.invalidarSessoes();
+        usuarioLogado.invalidateSessions();
         userRepository.save(usuarioLogado);
         refreshTokenService.revokeAllForUser(usuarioLogado.getPublicId());
     }
 
 
-    private NaoAutenticadoException credenciaisInvalidas() {
+    private NaoAutenticadoException invalidCredentials() {
         return new NaoAutenticadoException("CREDENCIAIS_INVALIDAS", "Email/usuário ou senha inválidos.");
     }
 
-    private boolean excedeLimiteDoBcrypt(String senha) {
+    private boolean exceedsBcryptLimit(String senha) {
         return senha.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_BYTES;
     }
 
-    private RuntimeException traduzir(DataIntegrityViolationException ex) {
+    private RuntimeException translate(DataIntegrityViolationException ex) {
         String causa = String.valueOf(ex.getMostSpecificCause().getMessage());
         if (causa.contains("uk_users_email")) {
             return new ConflitoException("EMAIL_EM_USO", "O email informado já está em uso.");

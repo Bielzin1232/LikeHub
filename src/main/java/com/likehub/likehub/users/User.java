@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,7 +27,7 @@ public class User implements UserDetails {
     private Long id;
 
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
-    private UUID publicId = UUID.randomUUID();
+    private final UUID publicId = UUID.randomUUID();
 
     @Column(nullable = false, unique = true, length = 255)
     private String email;
@@ -34,11 +35,26 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "display_name", nullable = false, length = 50)
     private String displayName;
 
     @Column(name = "password_hash", nullable = false)
     private String password;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_followers",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "follower_id"),
+            indexes = {
+                    @Index(name = "idx_user_followers_user", columnList = "user_id"),
+                    @Index(name = "idx_user_followers_follower", columnList = "follower_id")
+            }
+    )
+    private Set<User> followers = new HashSet<>();
+
+    @ManyToMany(mappedBy = "followers", fetch = FetchType.LAZY)
+    private Set<User> following = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
@@ -51,7 +67,11 @@ public class User implements UserDetails {
     private Set<UserRoles> roles = new HashSet<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private final Instant createdAt = Instant.now();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "perfil_type", nullable = false)
+    private PerfilType perfilType = PerfilType.PUBLIC;
 
     @Column(name = "session_version", nullable = false)
     private long sessionVersion = 0;
@@ -62,22 +82,34 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Notification> notifications;
 
+    public void follow(User user) {
+        this.following.add(user);
+        user.getFollowers().add(this);
+    }
 
-    public static User criar(String email, String username, String passwordHash) {
+    public void unfollow(User user) {
+        this.following.remove(user);
+        user.getFollowers().remove(this);
+    }
+
+    public static User create(String email, String username, String passwordHash,String displayName) {
         User u = new User();
         u.email = email;
         u.username = username;
+        u.displayName = username;
         u.password = passwordHash;
         u.roles.add(UserRoles.USER);
         return u;
     }
-    public void atualizarSenhaHash(String novoHash) {
+
+    public void updatePasswordHash(String novoHash) {
         this.password = novoHash;
     }
 
-    public void invalidarSessoes() {
+    public void invalidateSessions() {
         sessionVersion++;
     }
+
     public Set<UserRoles> getRoles() {
         return Collections.unmodifiableSet(roles);
     }
@@ -91,6 +123,19 @@ public class User implements UserDetails {
         return roles.stream()
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r.name()))
                 .toList();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(publicId, user.publicId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(publicId);
     }
 
     @Override

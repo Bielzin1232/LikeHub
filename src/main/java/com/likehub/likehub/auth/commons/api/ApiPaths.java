@@ -1,14 +1,13 @@
 package com.likehub.likehub.auth.commons.api;
+
 /**
- * Classe que contém as constantes de caminho da API
+ * Classe que contém as constantes de caminho da API.
+ * Atualizada para seguir padrões estritos do RESTful design.
  */
 public final class ApiPaths {
 
     private ApiPaths() {}
 
-    // ==========================================================
-    // RAIZ
-    // ==========================================================
     public static final String API_V1        = "/api/v1";
     public static final String DOCS_ROOT     = "/api/docs";
     public static final String ACTUATOR_ROOT = "/actuator";
@@ -18,7 +17,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Auth {
         private Auth() {}
-
         public static final String BASE            = API_V1 + "/auth";
         public static final String REGISTER        = BASE + "/register";
         public static final String LOGIN           = BASE + "/login";
@@ -33,7 +31,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Users {
         private Users() {}
-
         public static final String BASE          = API_V1 + "/users";
         public static final String ME            = BASE + "/me";
         public static final String SEARCH        = BASE + "/search";
@@ -48,7 +45,7 @@ public final class ApiPaths {
     public static final class Follow {
         private Follow() {}
         public static final String BASE      = ApiPaths.Users.BY_USERNAME;
-        public static final String FOLLOW    = BASE + "/follow";
+        public static final String FOLLOWS   = BASE + "/followers";
         public static final String FOLLOWERS = BASE + "/followers";
         public static final String FOLLOWING = BASE + "/following";
     }
@@ -58,9 +55,9 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Posts {
         private Posts() {}
-        public static final String BASE  = API_V1 + "/posts";
-        public static final String BY_ID = BASE + "/{postId}";
-        public static final String SAVE  = BY_ID + "/save";
+        public static final String BASE     = API_V1 + "/posts";
+        public static final String BY_ID    = BASE + "/{postId}";
+        public static final String BOOKMARK = BY_ID + "/bookmark";
     }
 
     // ==========================================================
@@ -68,7 +65,6 @@ public final class ApiPaths {
     // ==========================================================
     public static final class Comments {
         private Comments() {}
-
         public static final String BASE    = API_V1 + "/comments";
         public static final String BY_ID   = BASE + "/{commentId}";
         public static final String REPLIES = BY_ID + "/replies";
@@ -87,16 +83,13 @@ public final class ApiPaths {
     }
 
     // ==========================================================
-    // FEED
+    // FEED / EXPLORAR
     // ==========================================================
     public static final class Feed {
         private Feed() {}
         public static final String BASE = API_V1 + "/feed";
     }
 
-    // ==========================================================
-    // EXPLORAR
-    // ==========================================================
     public static final class Explore {
         private Explore() {}
         public static final String BASE = API_V1 + "/explore";
@@ -110,15 +103,16 @@ public final class ApiPaths {
         public static final String BASE         = API_V1 + "/notifications";
         public static final String UNREAD_COUNT = BASE + "/unread-count";
         public static final String READ_ALL     = BASE + "/read-all";
-        public static final String READ         = BASE + "/{notificationId}/read";
+        public static final String BY_ID        = BASE + "/{notificationId}";
+        public static final String READ         = BY_ID + "/read";
     }
+
     // ==========================================================
     // IMAGENS
     // ==========================================================
     public static final class Images {
         private Images() {}
-        public static final String BASE = API_V1 + "/images";
-        public static final String upload = BASE + "/upload";
+        public static final String BASE   = API_V1 + "/images";
+        public static final String UPLOAD = BASE + "/upload";
     }
-
 }

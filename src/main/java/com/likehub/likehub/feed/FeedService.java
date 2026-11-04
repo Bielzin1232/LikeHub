@@ -31,13 +31,14 @@ public class FeedService {
     private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional(readOnly = true)
-    public List<PostResponse> personalized(UUID userId) {
-        Map<Object, Object> preferences =
-                redisTemplate.opsForHash().entries("user:" + userId + ":preferences");
+    public List<PostResponse> personalized(UUID userId, int page) {
+        String chaveRedis = "user:" + userId.toString() + ":preferences";
+        Map<Object, Object> preferences = redisTemplate.opsForHash().entries(chaveRedis);
         Instant now = Instant.now();
 
-        return postRepository.findAll(PageRequest.of(0, CANDIDATE_LIMIT,
-                        Sort.by(Sort.Direction.DESC, "createdAt")))
+        return postRepository.findFeedCandidates(
+                        PageRequest.of(page, CANDIDATE_LIMIT, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .getContent()
                 .stream()
                 .map(post -> new ScoredPost(post, score(post, preferences, now)))
                 .sorted(Comparator.comparingDouble(ScoredPost::score).reversed())
@@ -51,10 +52,13 @@ public class FeedService {
         double affinity = post.getHashtags().stream()
                 .mapToDouble(tag -> preference(preferences, tag))
                 .sum();
+
         double hoursOld = Math.max(0,
                 Duration.between(post.getCreatedAt(), now).toMinutes() / 60.0);
         double recency = Math.max(0, 1 - hoursOld / RECENCY_WINDOW_HOURS) * 2;
-        double popularity = Math.log1p(likeFacade.obterTotalLikes(post.getId()));
+
+        double popularity = Math.log1p(likeFacade.getLikeCount(post.getPublicId()));
+
         return affinity * 3 + recency + popularity;
     }
 

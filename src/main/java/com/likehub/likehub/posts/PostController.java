@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(ApiPaths.Posts.BASE)
 @RequiredArgsConstructor
 public class PostController {
 
