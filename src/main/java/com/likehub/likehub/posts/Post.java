@@ -1,7 +1,7 @@
 package com.likehub.likehub.posts;
 
 
-import com.likehub.likehub.likes.LikeRecord;
+import com.likehub.likehub.comments.Comment;
 import com.likehub.likehub.users.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,8 +19,8 @@ import java.util.UUID;
 public class Post {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false,length = 100)
     private String title;
@@ -31,8 +31,8 @@ public class Post {
     @Column(nullable = false,updatable = false)
     private Instant createdAt;
 
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostComment> comments = new ArrayList<>();
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId = UUID.randomUUID();
 
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "post_hashtags", joinColumns = @JoinColumn(name = "post_id"))
@@ -51,6 +51,10 @@ public class Post {
             foreignKey = @ForeignKey(name = "fk_posts_sender"))
     private User sender;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments = new ArrayList<>();
+
+
     public void addImage(PostImage img) {
         img.setPost(this);
         this.images.add(img);
@@ -59,5 +63,4 @@ public class Post {
     private void prePersist() {
         this.createdAt = Instant.now();
     }
-
 }

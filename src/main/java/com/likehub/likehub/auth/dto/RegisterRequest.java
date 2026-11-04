@@ -14,6 +14,9 @@ public record RegisterRequest (
         String password,
         @NotBlank(message = "O nome de usuário é obrigatório")
         @Size(min = 3, max = 50, message = "O nome de usuário deve ter entre 3 e 50 caracteres")
-        String username
+        String username,
+        @NotBlank(message = "O nome de exibição é obrigatório")
+        @Size(min = 3, max = 50, message = "O nome de exibição deve ter entre 3 e 50 caracteres")
+        String displayName
 ) {
 }

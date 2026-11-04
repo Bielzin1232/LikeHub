@@ -17,7 +17,7 @@ import java.util.UUID;
 public class ImageController {
 
     private final ImageService imageService;
-    @PostMapping(path = ApiPaths.Images.upload, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = ApiPaths.Images.UPLOAD, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageResponse> upload(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal User usuarioLogado) {

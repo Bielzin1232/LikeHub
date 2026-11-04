@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 import java.util.function.Function;
@@ -37,33 +39,44 @@ public class PostService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "USUARIO_NAO_ENCONTRADO",
                         "O usuário informado não existe.")));
-        preencherPost(post, req.title(), req.content(), req.imageIds(), senderId);
+
+        populatePost(post, req.title(), req.content(), req.imageIds(), senderId);
         Post savedPost = postRepository.save(post);
-        atualizarFeedHashtags(savedPost, List.of());
+
+        executeAfterCommit(() -> syncRedisHashtags(savedPost.getPublicId(), savedPost.getHashtags(), List.of()));
+
         return savedPost;
     }
 
     @Transactional
     public Post update(UUID postId, UpdatePostRequest req, UUID authenticatedUserId) {
-        Post post = obterPostDoUsuario(postId, authenticatedUserId);
+        Post post = getPostForUser(postId, authenticatedUserId);
         List<String> hashtagsAnteriores = new ArrayList<>(post.getHashtags());
-        preencherPost(post, req.title(), req.content(), req.imageIds(), authenticatedUserId);
+
+        populatePost(post, req.title(), req.content(), req.imageIds(), authenticatedUserId);
         Post updatedPost = postRepository.save(post);
-        atualizarFeedHashtags(updatedPost, hashtagsAnteriores);
+
+        List<String> tagsAtuais = new ArrayList<>(updatedPost.getHashtags());
+        executeAfterCommit(() -> syncRedisHashtags(updatedPost.getPublicId(), tagsAtuais, hashtagsAnteriores));
+
         return updatedPost;
     }
 
     @Transactional
     public void delete(UUID postId, UUID authenticatedUserId) {
-        Post post = obterPostDoUsuario(postId, authenticatedUserId);
+        Post post = getPostForUser(postId, authenticatedUserId);
         List<String> hashtags = new ArrayList<>(post.getHashtags());
+
         postRepository.delete(post);
-        for (String tag : hashtags) {
-            redisTemplate.opsForZSet().remove("hashtag:feed:" + tag, postId.toString());
-        }
+
+        executeAfterCommit(() -> {
+            for (String tag : hashtags) {
+                redisTemplate.opsForZSet().remove("hashtag:feed:" + tag, postId.toString());
+            }
+        });
     }
 
-    private void preencherPost(Post post, String title, String content, List<UUID> imageIds, UUID senderId) {
+    private void populatePost(Post post, String title, String content, List<UUID> imageIds, UUID senderId) {
         post.setTitle(title);
         post.setContent(content);
         post.getImages().clear();
@@ -71,11 +84,11 @@ public class PostService {
         if (!ids.isEmpty()) {
             attachImages(post, ids, senderId);
         }
-        post.setHashtags(extrairHashtagsDoTexto(content));
+        post.setHashtags(extractHashtagsFromText(content));
     }
 
-    private Post obterPostDoUsuario(UUID postId, UUID authenticatedUserId) {
-        Post post = postRepository.findById(postId)
+    private Post getPostForUser(UUID postId, UUID authenticatedUserId) {
+        Post post = postRepository.findByPublicId(postId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
                         "POST_NAO_ENCONTRADO", "O post informado não existe."));
         if (!post.getSender().getPublicId().equals(authenticatedUserId)) {
@@ -85,20 +98,36 @@ public class PostService {
         return post;
     }
 
-    private void atualizarFeedHashtags(Post post, List<String> hashtagsAnteriores) {
-        for (String tag : hashtagsAnteriores) {
-            if (!post.getHashtags().contains(tag)) {
-                redisTemplate.opsForZSet().remove("hashtag:feed:" + tag, post.getId().toString());
+    private void syncRedisHashtags(UUID postPublicId, List<String> tagsAtuais, List<String> tagsAnteriores) {
+        String idStr = postPublicId.toString();
+
+        for (String tag : tagsAnteriores) {
+            if (!tagsAtuais.contains(tag)) {
+                redisTemplate.opsForZSet().remove("hashtag:feed:" + tag, idStr);
             }
         }
+
         long timestampScore = System.currentTimeMillis();
-        for (String tag : post.getHashtags()) {
-            redisTemplate.opsForZSet().add("hashtag:feed:" + tag,
-                    post.getId().toString(), timestampScore);
+        for (String tag : tagsAtuais) {
+            redisTemplate.opsForZSet().add("hashtag:feed:" + tag, idStr, timestampScore);
         }
     }
 
-    private List<String> extrairHashtagsDoTexto(String texto) {
+
+    private void executeAfterCommit(Runnable acao) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    acao.run();
+                }
+            });
+        } else {
+            acao.run();
+        }
+    }
+
+    private List<String> extractHashtagsFromText(String texto) {
         if (texto == null || texto.isEmpty()) return List.of();
 
         List<String> tags = new ArrayList<>();
@@ -114,20 +143,15 @@ public class PostService {
         return tags;
     }
 
-
     private void attachImages(Post post, List<UUID> imageIds, UUID userId) {
         if (new HashSet<>(imageIds).size() != imageIds.size()) {
-            throw new RequisicaoInvalidaException(
-                    "IMAGENS_DUPLICADAS",
-                    "IDs de imagem duplicados.");
+            throw new RequisicaoInvalidaException("IMAGENS_DUPLICADAS", "IDs de imagem duplicados.");
         }
 
         List<UploadedImage> uploads = uploadedImageRepository.findAllById(imageIds);
 
         if (uploads.size() != imageIds.size()) {
-            throw new RecursoNaoEncontradoException(
-                    "IMAGEM_NAO_ENCONTRADA",
-                    "Uma ou mais imagens não existem.");
+            throw new RecursoNaoEncontradoException("IMAGEM_NAO_ENCONTRADA", "Uma ou mais imagens não existem.");
         }
 
         Map<UUID, UploadedImage> byId = uploads.stream()
@@ -137,14 +161,10 @@ public class PostService {
             UploadedImage up = byId.get(imageIds.get(i));
 
             if (!up.getOwner().getPublicId().equals(userId)) {
-                throw new AcessoNegadoException(
-                        "IMAGEM_NAO_PERTENCE_AO_USUARIO",
-                        "A imagem informada não pertence ao usuário.");
+                throw new AcessoNegadoException("IMAGEM_NAO_PERTENCE_AO_USUARIO", "A imagem informada não pertence ao usuário.");
             }
             if (up.getStatus() != ImageStatus.PENDING) {
-                throw new ConflitoException(
-                        "IMAGEM_JA_UTILIZADA",
-                        "A imagem informada já foi utilizada.");
+                throw new ConflitoException("IMAGEM_JA_UTILIZADA", "A imagem informada já foi utilizada.");
             }
 
             PostImage img = new PostImage();
