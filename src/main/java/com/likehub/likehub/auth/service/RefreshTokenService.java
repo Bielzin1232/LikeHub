@@ -1,7 +1,7 @@
 package com.likehub.likehub.auth.service;
 
-import com.likehub.likehub.auth.commons.api.RefreshToken;
-import com.likehub.likehub.auth.commons.api.RefreshTokenRepository;
+import com.likehub.likehub.auth.RefreshToken;
+import com.likehub.likehub.auth.RefreshTokenRepository;
 import com.likehub.likehub.shared.exceptions.NaoAutenticadoException;
 import com.likehub.likehub.users.User;
 import org.springframework.stereotype.Service;

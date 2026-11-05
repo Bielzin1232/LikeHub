@@ -32,7 +32,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
 
     @Column(name = "display_name", nullable = false, length = 50)
@@ -96,7 +96,7 @@ public class User implements UserDetails {
         User u = new User();
         u.email = email;
         u.username = username;
-        u.displayName = username;
+        u.displayName = displayName;
         u.password = passwordHash;
         u.roles.add(UserRoles.USER);
         return u;

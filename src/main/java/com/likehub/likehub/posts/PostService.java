@@ -48,6 +48,13 @@ public class PostService {
         return savedPost;
     }
 
+    @Transactional(readOnly = true)
+    public Post getByPublicId(UUID postId) {
+        return postRepository.findByPublicId(postId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException(
+                        "POST_NAO_ENCONTRADO", "O post informado não existe."));
+    }
+
     @Transactional
     public Post update(UUID postId, UpdatePostRequest req, UUID authenticatedUserId) {
         Post post = getPostForUser(postId, authenticatedUserId);

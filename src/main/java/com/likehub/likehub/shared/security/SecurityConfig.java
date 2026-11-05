@@ -1,10 +1,11 @@
 package com.likehub.likehub.shared.security;
 
 import com.likehub.likehub.users.UserRepository;
-import com.likehub.likehub.auth.commons.api.ApiPaths;
+import com.likehub.likehub.api.ApiPaths;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -34,6 +35,10 @@ public class SecurityConfig {
 						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(ApiPaths.Auth.BASE + "/**").permitAll()
+						.requestMatchers(HttpMethod.GET,
+								ApiPaths.Posts.BY_ID,
+								ApiPaths.Comments.BY_POST,
+								ApiPaths.Comments.REPLIES).permitAll()
 						.anyRequest().authenticated()
 				)
 				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

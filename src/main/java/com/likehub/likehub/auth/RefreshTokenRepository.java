@@ -1,4 +1,4 @@
-package com.likehub.likehub.auth.commons.api;
+package com.likehub.likehub.auth;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

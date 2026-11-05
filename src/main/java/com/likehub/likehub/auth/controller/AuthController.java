@@ -1,6 +1,6 @@
 package com.likehub.likehub.auth.controller;
 
-import com.likehub.likehub.auth.commons.api.ApiPaths;
+import com.likehub.likehub.api.ApiPaths;
 import com.likehub.likehub.auth.dto.*;
 import com.likehub.likehub.auth.service.AuthService;
 import com.likehub.likehub.auth.service.RefreshTokenService;

@@ -7,6 +7,7 @@ public record RegisterResponse(
         UUID publicId,
         String email,
         String username,
+        String displayName,
         String accessToken,
         String refreshToken,
         String tokenType,
