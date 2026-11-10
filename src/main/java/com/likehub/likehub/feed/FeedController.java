@@ -1,6 +1,6 @@
 package com.likehub.likehub.feed;
 
-import com.likehub.likehub.auth.commons.api.ApiPaths;
+import com.likehub.likehub.api.ApiPaths;
 import com.likehub.likehub.posts.dto.PostResponse;
 import com.likehub.likehub.users.User;
 import lombok.RequiredArgsConstructor;

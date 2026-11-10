@@ -1,6 +1,6 @@
 package com.likehub.likehub.notifications;
 
-import com.likehub.likehub.auth.commons.api.ApiPaths;
+import com.likehub.likehub.api.ApiPaths;
 import com.likehub.likehub.notifications.dto.NotificationResponse;
 import com.likehub.likehub.users.User;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,6 @@ public class NotificationController {
     public ResponseEntity<List<NotificationResponse>> list(
             @AuthenticationPrincipal User authenticatedUser,
             @RequestParam(name = "page", defaultValue = "0") int page) {
-
         List<NotificationResponse> notifications = notificationService.listNotifications(authenticatedUser.getPublicId(), page);
         return ResponseEntity.ok(notifications);
     }

@@ -1,6 +1,6 @@
 package com.likehub.likehub.posts;
 
-import com.likehub.likehub.auth.commons.api.ApiPaths;
+import com.likehub.likehub.api.ApiPaths;
 import com.likehub.likehub.posts.dto.CreatePostRequest;
 import com.likehub.likehub.posts.dto.PostResponse;
 import com.likehub.likehub.posts.dto.UpdatePostRequest;
@@ -20,7 +20,12 @@ public class PostController {
 
     private final PostService postService;
 
-    @PostMapping
+    @GetMapping(ApiPaths.Posts.BY_ID)
+    public ResponseEntity<PostResponse> getById(@PathVariable UUID postId) {
+        return ResponseEntity.ok(PostResponse.from(postService.getByPublicId(postId)));
+    }
+
+    @PostMapping(ApiPaths.Posts.BASE)
     public ResponseEntity<PostResponse> create(
             @Valid @RequestBody CreatePostRequest request,
             @AuthenticationPrincipal User authenticatedUser) {

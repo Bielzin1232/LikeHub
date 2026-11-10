@@ -1,4 +1,4 @@
-package com.likehub.likehub.auth.commons.api;
+package com.likehub.likehub.api;
 
 /**
  * Classe que contém as constantes de caminho da API.
@@ -45,7 +45,6 @@ public final class ApiPaths {
     public static final class Follow {
         private Follow() {}
         public static final String BASE      = ApiPaths.Users.BY_USERNAME;
-        public static final String FOLLOWS   = BASE + "/followers";
         public static final String FOLLOWERS = BASE + "/followers";
         public static final String FOLLOWING = BASE + "/following";
     }
@@ -69,6 +68,11 @@ public final class ApiPaths {
         public static final String BY_ID   = BASE + "/{commentId}";
         public static final String REPLIES = BY_ID + "/replies";
         public static final String BY_POST = ApiPaths.Posts.BY_ID + "/comments";
+        public static final String BY_POST_COMMENT = BY_POST + "/{commentId}";
+        public static final String CREATE = BASE + "/create";
+        public static final String UPDATE = BY_POST_COMMENT + "/update";
+        public static final String DELETE = BY_POST_COMMENT;
+        public static final String CREATE_REPLY = BY_POST_COMMENT + "/reply";
     }
 
     // ==========================================================
@@ -88,11 +92,6 @@ public final class ApiPaths {
     public static final class Feed {
         private Feed() {}
         public static final String BASE = API_V1 + "/feed";
-    }
-
-    public static final class Explore {
-        private Explore() {}
-        public static final String BASE = API_V1 + "/explore";
     }
 
     // ==========================================================

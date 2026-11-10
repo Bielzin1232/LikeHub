@@ -1,4 +1,4 @@
-package com.likehub.likehub.auth.commons.api;
+package com.likehub.likehub.auth;
 
 import com.likehub.likehub.users.User;
 import jakarta.persistence.*;

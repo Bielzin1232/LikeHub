@@ -47,7 +47,7 @@ public class AuthService {
 
     public RegisterResponse register(RegisterRequest request) {
         String email = request.email().toLowerCase(Locale.ROOT);
-        String username = request.username().toLowerCase(Locale.ROOT);
+        String username = request.username().trim();
         String displayName = request.displayName().trim();
 
         if (exceedsBcryptLimit(request.password())) {
@@ -60,9 +60,6 @@ public class AuthService {
         }
         if (userRepository.existsByEmail(email)) {
             throw new ConflitoException("EMAIL_EM_USO", "O email informado já está em uso.");
-        }
-        if (userRepository.existsByUsername(username)) {
-            throw new ConflitoException("USERNAME_EM_USO", "O nome de usuário informado já está em uso.");
         }
         if (displayName.isBlank()) {
             throw new RequisicaoInvalidaException("DISPLAY_NAME_INVALIDO", "O nome de exibição não pode estar em branco.");
@@ -82,7 +79,7 @@ public class AuthService {
         String token = jwtUtil.generateAccessToken(user);
         String refreshToken = refreshTokenService.createRefreshToken(user, null);
         return new RegisterResponse(user.getPublicId(), user.getEmail(), user.getUsername(),
-                token, refreshToken, "Bearer", jwtUtil.getExpirationMillis() / 1000);
+                user.getDisplayName(), token, refreshToken, "Bearer", jwtUtil.getExpirationMillis() / 1000);
     }
 
 
@@ -91,10 +88,8 @@ public class AuthService {
             throw invalidCredentials();
         }
 
-        String identificador = request.identifier().strip().toLowerCase(Locale.ROOT);
-        Optional<User> encontrado = identificador.contains("@")
-                ? userRepository.findByEmail(identificador)
-                : userRepository.findByUsername(identificador);
+        String email = request.identifier().strip().toLowerCase(Locale.ROOT);
+        Optional<User> encontrado = userRepository.findByEmail(email);
 
         String hash = encontrado.map(User::getPassword).orElse(hashFalso);
         boolean senhaConfere = passwordEncoder.matches(request.password(), hash);
@@ -110,7 +105,7 @@ public class AuthService {
         }
         String refreshToken = refreshTokenService.createRefreshToken(user, null);
         String token = jwtUtil.generateAccessToken(user);
-        return new LoginResponse(user.getPublicId(), user.getUsername(), token, refreshToken,
+        return new LoginResponse(user.getPublicId(), user.getUsername(), user.getDisplayName(), token, refreshToken,
                 "Bearer", jwtUtil.getExpirationMillis() / 1000);
     }
 
@@ -143,7 +138,7 @@ public class AuthService {
 
 
     private NaoAutenticadoException invalidCredentials() {
-        return new NaoAutenticadoException("CREDENCIAIS_INVALIDAS", "Email/usuário ou senha inválidos.");
+        return new NaoAutenticadoException("CREDENCIAIS_INVALIDAS", "Email ou senha inválidos.");
     }
 
     private boolean exceedsBcryptLimit(String senha) {
@@ -154,9 +149,6 @@ public class AuthService {
         String causa = String.valueOf(ex.getMostSpecificCause().getMessage());
         if (causa.contains("uk_users_email")) {
             return new ConflitoException("EMAIL_EM_USO", "O email informado já está em uso.");
-        }
-        if (causa.contains("uk_users_username")) {
-            return new ConflitoException("USERNAME_EM_USO", "O nome de usuário informado já está em uso.");
         }
         return new ConflitoException("CONFLITO_DE_DADOS", "Não foi possível concluir o cadastro.");
     }

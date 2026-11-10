@@ -8,6 +8,7 @@ import java.util.UUID;
 public record LoginResponse(
         UUID publicId,
         String username,
+        String displayName,
         String accessToken,
         String refreshToken,
         String tokenType,

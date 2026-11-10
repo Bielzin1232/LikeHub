@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * "identifier" aceita e-mail OU username, como o Instagram.
+ * O identificador de login deve ser o email, que é único por conta.
  */
 public record LoginRequest(
         @NotBlank @Size(max = 255)
