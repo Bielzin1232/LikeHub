@@ -211,7 +211,7 @@ Authorization: Bearer <access-token>
 
 4. renovar o token usando o refresh token quando necessário.
 
-No login, o campo `identifier` deve conter o email. O `username` é um nome
+ No login, o campo `identifier` deve conter o email. O `username` é um nome
 público e pode ser repetido, portanto não serve como identificador exclusivo
 de uma conta.
 
